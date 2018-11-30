@@ -105,7 +105,7 @@ var map = L.map('mapdiv', {
 });
 
 L.control.scale({imperial: false}).addTo(map);
-var baseLayers = {"地理院タイル（標準地図）": std};
+var baseLayers = {"地理院タイル（標準地図）": std, "OpenStreetMap":osm};
 var overlays = {'サンプル': sampleLayer };
 L.control.layers(baseLayers, overlays,{position:'topright',collapsed:false}).addTo(map);
 </script>
