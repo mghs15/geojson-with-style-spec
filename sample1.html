@@ -89,6 +89,16 @@ var std = L.tileLayer(
   }
 );
 
+var osm = L.tileLayer(
+  'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: "<a href='https://www.openstreetmap.org' target='_blank'>OpenStreetMap</a>", 
+    maxNativeZoom: 18,
+    maxZoom: 18,
+    opacity:1
+  }
+);  
+  
 // 中心位置設定
 var map = L.map('mapdiv', {
   center: [36.102099,140.082239], zoom: 16, layers: [std,sampleLayer]
