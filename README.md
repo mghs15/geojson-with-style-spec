@@ -1,6 +1,7 @@
 geojson-with-style-spec
 =======================
-https://mghs15.github.io/geojson-with-style-spec/index1.html
+
+https://mghs15.github.io/geojson-with-style-spec/sample1.html
 
 =======================
 # スタイルつき GeoJSON 規約
