@@ -1,5 +1,6 @@
 geojson-with-style-spec
 =======================
+地理院が出してるLeafletで地図に上乗せ情報入れるってやつを少し改造
 
 https://mghs15.github.io/geojson-with-style-spec/sample1.html
 
