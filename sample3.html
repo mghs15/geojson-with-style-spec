@@ -47,6 +47,7 @@ var xhr = new XMLHttpRequest();
 xhr.open('GET', './sample1.kml', false);
 xhr.send(null);
 var sampledata = xhr.responseText; //var sampledata = JSON.parse(xhr.responseText);
+  var test_text = JSON.parse(xhr.responseText);
 
 var sampleLayer = L.geoJson(sampledata, {
   pointToLayer: function (feature, latlng) {
