@@ -19,6 +19,682 @@ html, body, #mapdiv {height: 100%; width: 100%;}
 <body>
 <div id="mapdiv">
 <script>
+/************************************************************************
+ L.FeatureGroup
+ - GSI.KML
+ ************************************************************************/
+GSI.KML = L.FeatureGroup.extend({
+	options: {
+		async: true
+	},
+	opacitySetter : new GSI.LayerOpacitySetter (),
+	initialize: function(kml, options) {
+		L.Util.setOptions(this, options);
+		this._kml = kml;
+		this._layers = {};
+	},
+	load : function()
+	{
+		if (this._kml) {
+			this.addKML(this._kml, this.options, this.options.async);
+		}
+	},
+	loadXML: function(url, cb, options, async) {
+		if (async === undefined) async = this.options.async;
+		if (options === undefined) options = this.options;
+
+		if ( this.options._map )
+		{
+			var bounds = this.options._map.getBounds();
+			url = url.replace( '{left}', bounds.getWest() );
+			url = url.replace( '{top}', bounds.getNorth() );
+			url = url.replace( '{right}', bounds.getEast() );
+			url = url.replace( '{bottom}', bounds.getSouth() );
+		}
+		
+		$.support.cors = true;
+		this.ajax = $.ajax({
+			type: "GET",
+			dataType: "xml",
+			url: url,
+			success:  L.Util.bind( this._onKMLLoad, this ),
+			error:  L.Util.bind( this._onKMLLoadError, this ),
+			async : async
+
+		});
+	},
+	onAdd: function (map) {
+		this._map = map;
+		this._map.on( 'zoomend', this._onZoomChange, this );
+		this._onZoomChange();
+	},
+	onRemove: function (map) {
+		if ( map ) map.off( 'zoomend', this._onZoomChange, this );
+		this.eachLayer(map.removeLayer, map);
+		this._map = null;
+		this._layerAdded = false;
+	},
+	_onZoomChange : function()
+	{
+		if ( !this._map ) return;
+		var zoom = this._map.getZoom();
+
+		if (
+			( this.options.minZoom && this.options.minZoom > zoom )
+				||
+			( this.options.maxZoom && this.options.maxZoom < zoom )
+		)
+		{
+			this._layerAdded = false;
+			this.eachLayer(this._map.removeLayer, this._map);
+		}
+		else
+		{
+			if ( !this._layerAdded )
+			{
+				this._layerAdded = true;
+				this.eachLayer(this._map.addLayer, this._map);
+			}
+		}
+	},
+	_onKMLLoadError : function(e)
+	{
+		this.fire('loaded');
+	},
+	_onKMLLoad : function( result )
+	{
+		var data = null;
+		if ( !result) return;
+
+		if ( result.data )
+		{
+			try
+			{
+				if (window.ActiveXObject)
+				{
+					data = new ActiveXObject("Microsoft.XMLDOM");
+					data.async = false;
+					data.loadXML($.trim(result.data));
+				}
+				else if (window.DOMParser)
+				{
+					data = new DOMParser().parseFromString(
+						$.trim(result.data),
+						"application/xml"
+					);
+				}
+			}
+			catch( e )
+			{
+				data = null;
+			}
+		}
+		else data = result;
+
+		if ( !data )
+		{
+			this.fire('loaded');
+		}
+		else
+		{
+			try
+			{
+				this._addKML( data, this.options );
+			}
+			catch( e )
+			{
+				this.fire('loaded');
+			}
+		}
+	},
+	addKML: function(url, options, async) {
+		var _this = this;
+		this.fire('loadstart');
+
+		try{
+			this.loadXML(url, null, options, async);
+		}
+		catch(e)
+		{
+			this.fire('loaded');
+		}
+	},
+	setMarkerZIndex : function( zIndex ) {
+		
+		this.options.zIndexOffset = zIndex;
+		L.FeatureGroup.prototype.setMarkerZIndex.call(this,this.options.zIndexOffset);
+	},
+	_addKML: function(xml, options) {
+
+		try
+		{
+			var layers = GSI.KML.parseKML(xml,this);
+
+			if (!layers || !layers.length)
+			{
+				this.fire('loaded');
+				return;
+			}
+			for (var i = 0; i < layers.length; i++) {
+				this.fire('addlayer', {
+					layer: layers[i]
+				});
+				
+				this.addLayer(layers[i]);
+			}
+			
+			if ( this.options.zIndexOffset )
+			{
+				this.setMarkerZIndex( this.options.zIndexOffset );
+			}
+			
+			this.latLngs = GSI.KML.getLatLngs(xml);
+			if ( this.opacity )
+			{
+				this.setOpacity( this.opacity );
+			}
+		}
+		catch( e ) {}
+		try{
+			this.fire('loaded');
+		} catch( e ) {}
+		this._onZoomChange();
+	},
+	setOpacity : function( opacity)
+	{
+		this.opacity = opacity;
+
+		this.eachLayer( L.bind( function( layer ){
+
+			this.opacitySetter.setOpacity( layer,this.opacity );
+
+		}, this ) );
+	},
+	latLngs: []
+});
+
+L.Util.extend(GSI.KML, {
+
+	parseKML: function (xml, obj) {
+		
+		var style = this.parseStyle(xml);
+		this.parseStyleMap(xml, style);
+		style.geodesic = ( obj && obj.options && obj.options.geodesic ? true : false );
+		
+		var el = xml.getElementsByTagName('Folder');
+		var layers = [], l;
+		for (var i = 0; i < el.length; i++) {
+			if (!this._check_folder(el[i])) { continue; }
+			l = this.parseFolder(el[i], style);
+			if (l) { layers.push(l); }
+		}
+		el = xml.getElementsByTagName('Placemark');
+		for (var j = 0; j < el.length; j++) {
+			if (!this._check_folder(el[j])) { continue; }
+			l = this.parsePlacemark(el[j], xml, style);
+			if (l) { layers.push(l); }
+		}
+		return layers;
+	},
+	// Return false if e's first parent Folder is not [folder]
+	// - returns true if no parent Folders
+	_check_folder: function (e, folder) {
+		
+		e = ( e.parentElement ?  e.parentElement : e.parentNode );
+		
+		while (e && e.tagName !== 'Folder')
+		{
+			e = ( e.parentElement ?  e.parentElement : e.parentNode );
+		}
+		return !e || e === folder;
+	},
+	parseStyle: function (xml) {
+		var style = {};
+		var sl = xml.getElementsByTagName('Style');
+
+		//for (var i = 0; i < sl.length; i++) {
+		var attributes = {color: true, width: true, Icon: true, href: true,
+						  hotSpot: true, scale: true};
+
+		function _parse(xml) {
+			var options = {};
+			for (var i = 0; i < xml.childNodes.length; i++) {
+				var e = xml.childNodes[i];
+				var key = e.tagName;
+
+				if (!attributes[key]) { continue; }
+				if (key === 'hotSpot')
+				{
+					for (var j = 0; j < e.attributes.length; j++) {
+						options[e.attributes[j].name] = e.attributes[j].nodeValue;
+					}
+				} else {
+					var value = e.childNodes[0].nodeValue;
+					if (key === 'color') {
+						
+						if ( value && value.length > 0 && value.charAt(0) == "#" )
+						{
+							options.color = value;
+							options.opacity = 1;
+						}
+						else
+						{
+							options.color = '#' + value.substring(6, 8) + value.substring(4, 6) + value.substring(2, 4);
+							options.opacity = parseInt(value.substring(0, 2), 16) / 255.0;
+						}
+					} else if (key === 'width') {
+						options.weight = value;
+					} else if (key === 'Icon') {
+						ioptions = _parse(e);
+						if (ioptions.href) { options.href = ioptions.href; }
+					} else if (key === 'href') {
+						options.href = value;
+					} else if (key === 'scale') {
+						options.scale = value;
+					}
+				}
+			}
+			return options;
+		}
+
+		for (var i = 0; i < sl.length; i++) {
+			var e = sl[i], el;
+			var options = {}, poptions = {}, ioptions = {};
+			el = e.getElementsByTagName('LineStyle');
+			if (el && el[0]) { options = _parse(el[0]); }
+			el = e.getElementsByTagName('PolyStyle');
+			if (el && el[0]) { poptions = _parse(el[0]); }
+			if (poptions.color) { options.fillColor = poptions.color; }
+			if (poptions.opacity || poptions.opacity == 0 ) { options.fillOpacity = poptions.opacity; }
+			el = e.getElementsByTagName('IconStyle');
+			if (el && el[0]) { ioptions = _parse(el[0]); }
+			if (ioptions.href) {
+				// save anchor info until the image is loaded
+				options.icon = {
+					iconUrl: ioptions.href,
+					shadowUrl: null,
+					iconAnchorRef: {x: ioptions.x, y: ioptions.y},
+					iconAnchorType:	{x: ioptions.xunits, y: ioptions.yunits},
+					_iconScale : ioptions.scale
+				};
+			}
+			style['#' + e.getAttribute('id')] = options;
+		}
+		return style;
+	},
+	parseStyleMap: function (xml, existingStyles) {
+		var sl = xml.getElementsByTagName('StyleMap');
+
+		for (var i = 0; i < sl.length; i++) {
+			var e = sl[i], el;
+			var smKey = '', smStyleUrl = '';
+
+			el = e.getElementsByTagName('key');
+			if (el && el[0]) { smKey = el[0].textContent; }
+			el = e.getElementsByTagName('styleUrl');
+			if (el && el[0]) { smStyleUrl = el[0].textContent; }
+
+			if (smKey === 'normal')
+			{
+				existingStyles['#' + e.getAttribute('id')] = existingStyles[smStyleUrl];
+			}
+		}
+
+		return;
+	},
+	parseFolder: function (xml, style) {
+		var el, layers = [], l;
+		el = xml.getElementsByTagName('Folder');
+		for (var i = 0; i < el.length; i++) {
+			if (!this._check_folder(el[i], xml)) { continue; }
+			l = this.parseFolder(el[i], style);
+			if (l) { layers.push(l); }
+		}
+		el = xml.getElementsByTagName('Placemark');
+		for (var j = 0; j < el.length; j++) {
+			if (!this._check_folder(el[j], xml)) { continue; }
+			l = this.parsePlacemark(el[j], xml, style);
+			if (l) { layers.push(l); }
+		}
+		if (!layers.length) { return; }
+		return new L.FeatureGroup(layers);
+	},
+	parsePlacemark: function (place, xml, style) {
+		var i, j, el, options = {};
+		el = place.getElementsByTagName('styleUrl');
+		for (i = 0; i < el.length; i++) {
+			var url = el[i].childNodes[0].nodeValue;
+			for (var a in style[url]) {
+				options[a] = style[url][a];
+			}
+		}
+		options.geodesic = style.geodesic;
+		var layers = [];
+		var parse = ['LineString', 'Polygon', 'Point'];
+		
+		var name, tbl = '', descr = '';
+		el = place.getElementsByTagName('name');
+		if (el.length && el[0].childNodes.length) {
+			name = el[0].childNodes[0].nodeValue;
+		}
+		for (j in parse) {
+			// for jshint
+			if (true)
+			{
+				var tag = parse[j];
+				if ( tag && typeof tag == 'string' )
+				{
+					el = place.getElementsByTagName(tag);
+					for (i = 0; i < el.length; i++) {
+						var l = this['parse' + tag](el[i], xml, options, name);
+						if (l) { layers.push(l); }
+					}
+				}
+			}
+		}
+
+		if (!layers.length) {
+			return;
+		}
+		var layer = layers[0];
+		if (layers.length > 1) {
+			layer = new L.FeatureGroup(layers);
+		}
+
+		
+		el = place.getElementsByTagName('description');
+		for (i = 0; i < el.length; i++) {
+			for (j = 0; j < el[i].childNodes.length; j++) {
+				descr = descr + el[i].childNodes[j].nodeValue;
+			}
+		}
+		
+		layer._information = {
+			title : ( name && name != '' ? name : null ),
+			description : ( descr && descr != '' ? descr : null ),
+			table : null
+		};
+		
+		if ( layer._information.description )
+		{
+			// parse table tag
+			var parser= $( '<div>' ).html( layer._information.description );
+
+			var table = parser.children( 'table' );
+
+			if (table.length > 0 )
+			{
+				var tr = $(table[0] ).find( 'tr' );
+				
+				if ( tr.length <= 0 )
+				{
+					tr = $(table[0] ).chidlren( 'tbody' ).children( 'tr' );
+				}
+				for ( var i=0; i<tr.length; i++ )
+				{
+					var td = $( tr[i] ).children( 'td' );
+					if ( td.length == 2 )
+					{
+						if ( !layer._information.table ) layer._information.table = [];
+						var value = $(td[1]).html();
+						value = value.replace(/\<br\>/ig, "\n" );
+						layer._information.table.push( { key : $(td[0]).html().replace(/\<br\>/ig, "\n" ), value: value } );
+					}
+					else
+					{
+						layer._information.table = null;
+						break;
+					}
+				}
+			}
+
+			delete parser;
+			parser = null;
+		}
+		
+		if ( layer._information.table ) layer._information.description = null;
+		
+		if ( ( name && name != '' ) || ( descr && descr != '' )  )
+		{
+			layer.bindPopup( ( name && name != '' ? '<h2>' + GSI.Utils.encodeHTML(name) + '</h2>' : '' ) + ( descr && descr != '' ? descr : '' ),
+					{
+						maxWidth:5000
+					});
+		}
+
+		return layer;
+	},
+	parseCoords: function (xml) {
+		var el = xml.getElementsByTagName('coordinates');
+		return this._read_coords(el[0]);
+	},
+	parseLineString: function (line, xml, options) {
+		var coords = this.parseCoords(line);
+		if (!coords.length) { return; }
+		return new L.Polyline(coords, options);
+	},
+	parsePoint: function (line, xml, options, name) {
+		var el = line.getElementsByTagName('coordinates');
+		if (!el.length) {
+			return;
+		}
+		
+		if ( options.icon )
+		{
+			options = $.extend( {}, options );
+			options.icon._name = name;
+			options.icon = new GSI.KMLIcon(options.icon);
+		}
+		var ll = el[0].childNodes[0].nodeValue.split(',');
+		
+		return new GSI.KMLMarker(new L.LatLng(ll[1], ll[0], ll.length >= 3 ? parseInt(ll[2]) : null ), options);
+	},
+	parsePolygon: function (line, xml, options) {
+		var el, polys = [], inner = [], i, coords;
+		el = line.getElementsByTagName('outerBoundaryIs');
+		for (i = 0; i < el.length; i++) {
+			coords = this.parseCoords(el[i]);
+			if (coords) {
+				polys.push(coords);
+			}
+		}
+		el = line.getElementsByTagName('innerBoundaryIs');
+		for (i = 0; i < el.length; i++) {
+			coords = this.parseCoords(el[i]);
+			if (coords) {
+				inner.push(coords);
+			}
+		}
+		if (!polys.length) {
+			return;
+		}
+		if (options.fillColor) {
+			options.fill = true;
+		}
+		if (polys.length === 1) {
+			return new L.Polygon(polys.concat(inner), options);
+		}
+		return new L.MultiPolygon(polys, options);
+	},
+	getLatLngs: function (xml) {
+		var el = xml.getElementsByTagName('coordinates');
+		var coords = [];
+		for (var j = 0; j < el.length; j++) {
+			// text might span many childNodes
+			coords = coords.concat(this._read_coords(el[j]));
+		}
+		return coords;
+	},
+	_read_coords: function (el) {
+		var text = '', coords = [], i;
+		for (i = 0; i < el.childNodes.length; i++) {
+			text = text + el.childNodes[i].nodeValue;
+		}
+		text = text.split(/[\s\n]+/);
+		for (i = 0; i < text.length; i++) {
+			var ll = text[i].split(',');
+			if (ll.length < 2) {
+				continue;
+			}
+			
+			if ( ll.length >= 3 && ll[2] != "" && ll[2] != 0 )
+				latLng = new L.LatLng(ll[1], ll[0], parseFloat(ll[2]));
+			else
+				latLng = new L.LatLng(ll[1], ll[0]);
+			
+			coords.push(latLng);
+		}
+		return coords;
+	}
+});
+
+GSI.KMLIcon = L.Icon.extend({
+	
+	
+	createIcon: function (oldIcon) {
+		var img = this._createIcon('icon');
+		
+		$(img).css( {'margin':0} );
+		var div = $( (oldIcon && oldIcon.tagName === 'DIV') ? oldIcon : document.createElement('div') );
+		this._div = div;
+		div.append( $(img) );
+		this._setIconStyles(div[0], 'icon');
+		
+		div.addClass("leaflet-clickable");
+		if ( img.width && img.width > 0 )
+		{
+			this._onIconImageLoaded( img );
+			
+		}
+		else
+		{
+			$(img).css({ 'visibility':'hidden'}).on( 'load', L.bind( this._onIconImageLoaded, this, img ) );
+		}
+		
+		
+		return div[0];
+		
+		//return img;
+	},
+	_onIconImageLoaded: function(img) {
+		var scale = ( this.options._iconScale ? this.options._iconScale : 1 );
+		var w = Math.round( img.width * scale );
+		var h = Math.round( img.height * scale );
+		this.options.iconSize = [w,h];
+		var anchorX = null;
+		var anchorY = null;
+		if ( this.options.iconAnchorRef && this.options.iconAnchorRef.x )
+		{
+			anchorX = Math.round(w*this.options.iconAnchorRef.x);
+		}
+		else
+		{
+			anchorX = Math.round(w/2);
+		}
+
+		if ( this.options.iconAnchorRef && this.options.iconAnchorRef.y )
+		{
+			anchorY = Math.round(h*this.options.iconAnchorRef.y);
+		}
+		else
+		{
+			anchorY = Math.round(h/2);
+		}
+		this.options.iconAnchor = [anchorX,anchorY];
+		
+		img.style.width = w + 'px';
+		img.style.height = h + 'px';
+		
+		
+		
+		this._setIconStyles(this._div[0], "icon");
+		
+		L.DomUtil.addClass(this._div[0], 'leaflet-clickable');
+		img.style.visibility= 'visible';
+		this._createLabel(this._div);
+	},
+	
+	_setIconStyles: function (img, name) {
+		var options = this.options;
+		var sizeOption = options[name + 'Size'];
+
+		if (typeof sizeOption === 'number') {
+			sizeOption = [sizeOption, sizeOption];
+		}
+
+		var size = L.point(sizeOption),
+		    anchor = L.point(name === 'shadow' && options.shadowAnchor || options.iconAnchor ||
+		            size && size.divideBy(2, true));
+		
+		$(img).addClass( 'leaflet-marker-' + name + ' ' + (options.className || '') );
+
+		if (anchor) {
+			img.style.marginLeft = (-anchor.x) + 'px';
+			img.style.marginTop  = (-anchor.y) + 'px';
+		}
+
+		if (size) {
+			img.style.width  = size.x + 'px';
+			img.style.height = size.y + 'px';
+		}
+	},
+	
+	_createLabel : function( div )
+	{
+		if ( this.options._name == null || this.options._name == '' )
+		{
+			this._label = null;
+		}
+		else
+		{
+			this._label = $("<div>").addClass("gsi-iconlabel-class").html(this.options._name).css({"position":"absolute"} );
+
+			var size = L.point(this.options['iconSize']);
+			if (!size) {
+				size = {};
+				size.x = 12;
+				size.y = 12;
+			}
+			
+			$("body").append( this._label );
+			this._label.css( { top:( size.y + 3 ) + 'px',
+				left : (size.x / 2) - (this._label.outerWidth() / 2) + 'px'} );
+			this._label.remove();
+
+			if ( !this.options.labelVisible  )
+			{
+				this._label.hide();
+			}
+			div.append( this._label) ;
+		}
+	},
+	setLabelText : function(text)
+	{
+		this.options._name = text;
+		if ( this._label ) this._label.remove();
+		this._createLabel(this._div);
+	},
+	setLabelVisible : function(visible)
+	{
+		this.options.labelVisible = visible;
+		if (this._label )
+		{
+			if (  this.options.labelVisible ) this._label.slideDown(200);
+			else  this._label.slideUp(200);
+		}
+	}
+	
+});
+
+
+GSI.KMLMarker = L.Marker.extend({
+	options: {
+		icon: new GSI.KMLIcon.Default(),
+		clickable:true
+	}
+});
+  
+/************************************/
 function geojson_style(prop) {
   var s = {};
   for(name in prop) {
@@ -40,15 +716,13 @@ function popup_properties(prop) {
   return s;
 }
 
-
 // スタイルつき GeoJSON読み込み
 // 「./sample1.geojson」の部分を適宜変更してください。
 var xhr = new XMLHttpRequest();
 xhr.open('GET', './sample1.kml', false);
 xhr.send(null);
-var sampledata = xhr.responseText; //var sampledata = JSON.parse(xhr.responseText);
-  var test_text = JSON.parse(xhr.responseText);
-
+var sampledata = GSI.KML.parseKML(xhr.responseText); //var sampledata = JSON.parse(xhr.responseText);
+  
 var sampleLayer = L.geoJson(sampledata, {
   pointToLayer: function (feature, latlng) {
     var s = geojson_style(feature.properties);
