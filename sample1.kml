@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<Style id="LineStyle1">
+  <LineStyle>
+  <color>7f000000</color>
+  <width>3</width>
+  </LineStyle>
+</Style>
+<Style id="PolyStyle2">
+  <LineStyle>
+  <color>7f000000</color>
+  <width>3</width>
+  </LineStyle>
+  <PolyStyle>
+  <color>7f0000ff</color>
+  </PolyStyle>
+</Style>
+<Style id="PolyStyle3">
+  <IconStyle>
+  <Icon>
+  <href>https://maps.gsi.go.jp/portal/sys/v4/symbols/080.png</href>
+  </Icon>
+  <scale>1</scale>
+  </IconStyle>
+</Style>
+<Placemark>
+<styleUrl>#LineStyle1</styleUrl>
+<LineString>
+<coordinates>140.09199142456058,36.097764656066964 140.09186267852786,36.09648162802495 140.0930213928223,36.09405422036905 140.09340763092044,36.091141232210745 140.0921201705933,36.08933789972179</coordinates>
+</LineString>
+</Placemark>
+<Placemark>
+<styleUrl>#PolyStyle2</styleUrl>
+<Polygon>
+<outerBoundaryIs>
+<LinearRing>
+<coordinates>140.09031772613528,36.09599615249214 140.09036064147952,36.09367276377757 140.08868694305423,36.09495583767963 140.0875282287598,36.09651630473397 140.08615493774417,36.09703645353283 140.08636951446536,36.098804933695156 140.08980274200442,36.09828479660259 140.08971691131595,36.097244512088324 140.09031772613528,36.09599615249214</coordinates>
+</LinearRing>
+</outerBoundaryIs>
+</Polygon>
+</Placemark>
+<Placemark>
+<styleUrl>#PolyStyle3</styleUrl>
+<Point>
+<coordinates>140.0843954086304,36.094296964508686</coordinates>
+</Point>
+</Placemark>
+<Placemark>
+<styleUrl>#PolyStyle3</styleUrl>
+<Point>
+<coordinates>140.08559703826907,36.09249370442554</coordinates>
+</Point>
+</Placemark>
+<Placemark>
+<styleUrl>#PolyStyle3</styleUrl>
+<Point>
+<coordinates>140.08559703826907,36.09249370442554</coordinates>
+</Point>
+</Placemark>
+</Document>
+</kml>
