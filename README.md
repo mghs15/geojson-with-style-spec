@@ -4,6 +4,8 @@ geojson-with-style-spec
 
 https://mghs15.github.io/geojson-with-style-spec/sample1.html
 
+https://mghs15.github.io/geojson-with-style-spec/sample3.html
+
 =======================
 # スタイルつき GeoJSON 規約
 ※この規約は検討中のものであり、今後変更する可能性がある。
