@@ -20,9 +20,23 @@ html, body, #mapdiv {height: 100%; width: 100%;}
 <div id="mapdiv">
 <script>
 /******************************************/
+    function showPopup(event) {
+      target = document.getElementById("popup");
 
+      if (!event) var event = window.event;
+      if (!event.pageX) px = event.clientX + document.body.scrollLeft; else px = event.pageX;
+      if (!event.pageY) py = event.clientY + document.body.scrollTop; else py = event.pageY;
 
+        target.style.left = px+10 + "px";
+        target.style.top = py+5 + "px";
+        target.style.visibility = "visible";
+    }
 
+    function hidePopup() {
+      target = document.getElementById("popup");
+      target.style.visibility = "hidden";
+    }
+/* copied from https://www.ipentec.com/document/html-javascript-simple-popup */
 
 
 /******************************************/
@@ -49,7 +63,7 @@ function popup_properties(prop) {
       s += name + "：" + prop[name] + "<br>";
     }
     if(name.match(/^_js/)){
-      s += prop[name] + "<br>";
+      s += name + prop[name] + "<br>";
     }
   }
   return s;
