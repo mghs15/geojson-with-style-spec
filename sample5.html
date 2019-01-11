@@ -66,10 +66,10 @@ function popup_properties(prop) {
       s += "<p>" + name + "：" + prop[name] + "</p><br>";
     }
     if(name.match(/^_otherPopup/)){
-      s += name + "：" + prop[name] + "<br>";
+      s += prop[name] + "<br>";
     }
     if(name.match(/^_js/)){
-      s += name + prop[name] + "<br>";
+      s += prop[name] + "<br>";
     }
   }
   return s;
