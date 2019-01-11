@@ -25,14 +25,14 @@ html, body, #mapdiv {height: 100%; width: 100%;}
 
       if (!event) var event = window.event;
 //      if (!event.pageX) px = event.clientX + document.body.scrollLeft; else px = event.pageX;
-      if (!event.pageX) px = event.screenX;
+      if (!event.pageX) px = event.screenX/2;
 //      if (!event.pageY) py = event.clientY + document.body.scrollTop; else py = event.pageY;
-      if (!event.pageY) py = event.screenY;
+      if (!event.pageY) py = event.screenY/2;
 
 //        target.style.left = px+10 + "px";
 //        target.style.top = py+5 + "px";
-        target.style.left = px+10 + "px";
-        target.style.top = 0 + "px";
+        target.style.left = px + "px";
+        target.style.top = py + "px";
         target.style.visibility = "visible";
     }
 
