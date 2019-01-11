@@ -24,11 +24,15 @@ html, body, #mapdiv {height: 100%; width: 100%;}
       target = document.getElementById("popup");
 
       if (!event) var event = window.event;
-      if (!event.pageX) px = event.clientX + document.body.scrollLeft; else px = event.pageX;
-      if (!event.pageY) py = event.clientY + document.body.scrollTop; else py = event.pageY;
+//      if (!event.pageX) px = event.clientX + document.body.scrollLeft; else px = event.pageX;
+      if (!event.pageX) px = event.screenX;
+//      if (!event.pageY) py = event.clientY + document.body.scrollTop; else py = event.pageY;
+      if (!event.pageY) py = event.screenY;
 
+//        target.style.left = px+10 + "px";
+//        target.style.top = py+5 + "px";
         target.style.left = px+10 + "px";
-        target.style.top = py+5 + "px";
+        target.style.top = 0 + "px";
         target.style.visibility = "visible";
     }
 
