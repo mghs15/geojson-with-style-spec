@@ -52,7 +52,7 @@
     {
       "type": "Feature",
       "properties": {
-        "test": "<p>test-value 2 </p><p><img src='https://maps.gsi.go.jp/xyz/std/17/116504/51327.png' width='100'></p>",
+        "test": "<p>test-value 3 </p><p><img src='https://maps.gsi.go.jp/xyz/std/17/116504/51327.png' width='100'></p>",
         "_js": "<div><a href=\"javascript:void(0);\" onmouseover='showPopup(event);console.log(\"This is test 3\");' onmouseout=\"hidePopup();\">ポップアップ表示</a></div> <div id=\"popup\"  style=\"position:aute; z-index:10; visibility:hidden; background-color:#fbff96;\"><p>ポップアップです。</p><img src=\"https://cyberjapandata.gsi.go.jp/xyz/std/6/58/23.png\"></div>",
         "_markerType": "Icon",
         "_iconUrl": "https://maps.gsi.go.jp/portal/sys/v4/symbols/081.png",
@@ -76,8 +76,8 @@
     {
       "type": "Feature",
       "properties": {
-        "test": "<p>test-value 2 </p><p><img src='https://maps.gsi.go.jp/xyz/std/17/116504/51327.png' width='100'></p>",
-        "_js": "<div  style=\"position:aute; max-width=300; max-height=300;\"><a href=\"javascript:void(0);\" onmouseover='showPopup(event);console.log(\"This is test 4\");' onmouseout=\"hidePopup();\">ポップアップ表示</a></div> <div id=\"popup\"  style=\"position:aute; z-index:10; visibility:hidden; background-color:#fbff96;\"><p>ポップアップです。</p><img src=\"https://cyberjapandata.gsi.go.jp/xyz/std/6/58/23.png\"></div>",
+        "test": "<p>test-value 4 </p><p><img src='https://maps.gsi.go.jp/xyz/std/17/116504/51327.png' width='100'></p>",
+        "_js": "<!-- レイヤー --><div id=\"layer\" style=\"display: none; position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; background-color: black; opacity: 0.20;\"></div><!-- ポップアップ --><div id=\"popup\" style=\"display: none; position: absolute; left: 50%; top: 50%; width: 300px; height: 200px; margin-left: -150px; margin-top: -100px; background-color: white; border-radius: 5px; text-align: center;\">  <div>popup</div>  <input type=\"button\" id=\"close\" value=\"close popup\"></div>",
         "_markerType": "Icon",
         "_iconUrl": "https://maps.gsi.go.jp/portal/sys/v4/symbols/081.png",
         "_iconSize": [
