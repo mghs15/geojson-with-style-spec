@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "あ": "あ",
+        "URL": "URL",
+        "otherPopup": "<input type='button' value='Javascript Action' name='js2' onclick='alert(\"これでJavascriptが実行できました\");console.log(\"This is the test Red\");' >",
+        "_markerType": "Icon",
+        "_iconUrl": "https://maps.gsi.go.jp/portal/sys/v4/symbols/080.png",
+        "_iconSize": [
+          20,
+          20
+        ],
+        "_iconAnchor": [
+          10,
+          10
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.944336,
+          35.478565
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "あ": "あ",
+        "URL": "URL",
+        "otherPopup": "<input type='button' value='Javascript Action' name='js2' onclick='var popup = L.popup().setLatLng([136, 36]).setContent(\"This is the test Blue\").openOn(map);console.log(\"This is the test Blue\");' >",
+        "otherPopup2": "<button onclick='var url=\"http://www.gsi.go.jp/common/000084685.jpg\";var a=\"<p>ポップアップ表示だよ</p>\";var b=\"<img src=\";var c=\">\";var text=a+b+url+c;console.log(text);var myWindow;function openWin(){myWindow = window.open(\"\", \"myWindow\", \"width=300,height=200\");myWindow.document.write(text);};openWin()'>新しいウィンドウで<br>ポップアップを表示</button>",
+        "otherPopup3": "<button onclick='var url=\"http://www.gsi.go.jp/common/000084685.jpg\";var a=\"<p>ポップアップ表示だよ</p>\";var b=\"<img src=\";var c=\">\";var text=a+b+url+c;console.log(text);var myWindow;function openWin(){myWindow = window.open(\"\", \"myWindow\", \"width=300,height=200\");myWindow.document.write(text);};openWin()'>新しいウィンドウで<br>ポップアップを表示</button>",
+        "_markerType": "Icon",
+        "_iconUrl": "https://maps.gsi.go.jp/portal/sys/v4/symbols/081.png",
+        "_iconSize": [
+          20,
+          20
+        ],
+        "_iconAnchor": [
+          10,
+          10
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          140.053711,
+          36.633162
+        ]
+      }
+    }
+  ]
+}
