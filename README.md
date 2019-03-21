@@ -6,6 +6,8 @@ https://mghs15.github.io/geojson-with-style-spec/sample1.html
 
 https://mghs15.github.io/geojson-with-style-spec/sample3.html
 
+以下、国土地理院が出しているReadme.mdをそのまま転載
+
 =======================
 # スタイルつき GeoJSON 規約
 ※この規約は検討中のものであり、今後変更する可能性がある。
